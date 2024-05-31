@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <style>
+        /* Basic CSS for styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Upload a File</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file" id="fileInput">
+        <button type="submit">Upload</button>
+    </form>
+
+    <!-- JavaScript to handle form submission -->
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevent form submission
+
+            var formData = new FormData(); // Create FormData object
+            var fileInput = document.getElementById('fileInput'); // Get file input element
+
+            // Check if a file is selected
+            if (fileInput.files.length > 0) {
+                var file = fileInput.files[0]; // Get the first file
+                formData.append('file', file); // Append file to FormData object
+
+                // Send AJAX request to upload file
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '/upload', true);
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        console.log('File uploaded successfully');
+                        window.location.href = '/processed.html'; // Redirect to processed file page
+                    } else {
+                        console.error('Error uploading file');
+                    }
+                };
+                xhr.send(formData); // Send FormData object
+            } else {
+                console.error('No file selected');
+            }
+        });
+    </script>
+</body>
+
+</html>

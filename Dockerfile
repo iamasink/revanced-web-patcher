@@ -28,10 +28,20 @@ WORKDIR /usr/src/app
 # Copy only package.json and package-lock.json (if available)
 COPY package*.json ./
 
-# download revanced-cli
+# download revanced-cli and patches
 ARG REVANCED_CLI_VER="4.6.0"
 ARG REVANCED_CLI_FILE="revanced-cli-${REVANCED_CLI_VER}-all.jar"
 RUN wget -O /revanced-cli.jar "https://github.com/ReVanced/revanced-cli/releases/download/v${REVANCED_CLI_VER}/${REVANCED_CLI_FILE}"
+
+ARG REVANCED_PATCHES_VER="4.8.3"
+ARG REVANCED_PATCHES_FILE="revanced-patches-${REVANCED_PATCHES_VER}.jar"
+ARG REVANCED_PATCHES_URL="https://github.com/ReVanced/revanced-patches/releases/download/v${REVANCED_PATCHES_VER}/${REVANCED_PATCHES_FILE}"
+RUN wget -O /revanced-patches.jar ${REVANCED_PATCHES_URL}
+
+ARG REVANCED_INTEGRATIONS_VER="1.9.2"
+ARG REVANCED_INTEGRATIONS_FILE="revanced-integrations-${REVANCED_INTEGRATIONS_VER}.apk"
+ARG REVANCED_INTEGRATIONS_URL="https://github.com/ReVanced/revanced-integrations/releases/download/v${REVANCED_INTEGRATIONS_VER}/${REVANCED_INTEGRATIONS_FILE}"
+RUN wget -O /revanced-integrations.apk ${REVANCED_INTEGRATIONS_URL}
 
 # Install dependencies
 RUN npm install -g pnpm
@@ -59,8 +69,8 @@ WORKDIR /usr/src/app
 
 # Copy the node_modules directory from the dependencies stage
 COPY --from=dependencies /usr/src/app/node_modules ./node_modules
-# Copy revanced-cli from dependencies
-COPY --from=dependencies /revanced-cli.jar /revanced-cli.jar
+# Copy revanced-cli, revances-patches, etc from dependencies
+COPY --from=dependencies /revanced-* /
 
 # Copy the compiled application code
 COPY --from=builder /usr/src/app/dist ./dist

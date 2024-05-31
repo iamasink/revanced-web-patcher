@@ -35,6 +35,27 @@
         button:hover {
             background-color: #0056b3;
         }
+
+        .loader {
+            border: 16px solid #f3f3f3;
+            /* Light grey */
+            border-top: 16px solid #3498db;
+            /* Blue */
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 
@@ -61,10 +82,19 @@
                 // Send AJAX request to upload file
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', '/upload', true);
+                var downloadLink = '<div class="loader"></div>';
+                document.getElementById('downloadLink').innerHTML = downloadLink;
+                // document.getElementById('submit') = <button type="submit" disabled>Uploaded</button>
+
                 xhr.onload = function () {
                     if (xhr.status === 200) {
                         console.log('File uploaded successfully');
-                        window.location.href = '/processed.html'; // Redirect to processed file page
+                        // Parse the JSON response
+                        var response = JSON.parse(xhr.responseText);
+                        // Create a download link for the processed file
+                        var downloadLink = '<a href="' + response.downloadUrl + '">Download Processed File</a>';
+                        // Display the download link on the page
+                        document.getElementById('downloadLink').innerHTML = downloadLink;
                     } else {
                         console.error('Error uploading file');
                     }
@@ -74,7 +104,29 @@
                 console.error('No file selected');
             }
         });
+        // handle log 
+        const outputElement = document.getElementById('log');
+
+        // Function to handle SSE messages
+        const handleMessage = (event) => {
+            outputElement.innerText += event.data + '\n';
+        };
+
+        // Connect to the SSE endpoint
+        const eventSource = new EventSource('/process');
+
+        // Attach the message event handler
+        eventSource.onmessage = handleMessage;
+
+        // Handle SSE connection closure
+        eventSource.onerror = () => {
+            outputElement.innerText += 'Connection to server closed\n';
+        };
+
     </script>
+    <div id="log"></div>
+    <!-- Placeholder for the download link -->
+    <div id="downloadLink"></div>
 </body>
 
 </html>

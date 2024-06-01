@@ -26,7 +26,8 @@ const upload = multer({ dest: UPLOAD_FOLDER })
 
 // Serve static files
 console.log(path.join(__dirname, "./public"))
-app.use("/", express.static(path.join(__dirname, "./public")));
+// serve the compiled `dist` files to the client
+app.use("/", express.static(path.join(__dirname, "../dist/public")));
 
 // Log requests
 app.use((req, res, next) => {
@@ -242,7 +243,7 @@ app.get('/latest-release', async (req: Request, res: Response) => {
                     getLatestIntegrations()
                 ]);
                 console.log("done fetch")
-                const downloadPromises = []
+                const downloadPromises: Promise<void>[] = []
                 if ("v" + latestpatches != newpatches.tag_name) {
                     console.log("downloading patches")
                     downloadPromises.push(downloadFile("patches.json", newpatches.assets.find((element) => element.name === "patches.json").browser_download_url))

@@ -1,47 +1,34 @@
-# # Use the official Alpine image from the Docker Hub
-# FROM alpine:3.14 AS builder
+ARG REVANCED_CLI_VER="4.6.0"
+ARG REVANCED_PATCHES_VER="4.8.2"
+ARG REVANCED_INTEGRATIONS_VER="1.9.2"
 
-# # Install bash and curl
-# RUN apk add --no-cache bash curl
-
-# # Define variables
-# ARG REVANCED_CLI_VER="4.6.0"
-# ARG REVANCED_CLI_FILE="revanced-cli-${REVANCED_CLI_VER}-all.jar"
-
-# # Retrieve the latest release
-# RUN wget "https://github.com/ReVanced/revanced-cli/releases/download/v${REVANCED_CLI_VER}/${REVANCED_CLI_FILE}" - /revanced-cli.jar
-
-# # Copy the entrypoint script into the image
-# COPY ./src/entrypoint.sh /entrypoint.sh
-# RUN chmod +x /entrypoint.sh
-
-# # Set the entrypoint
-# ENTRYPOINT ["/entrypoint.sh"]
 
 
 # Stage 1: Install dependencies
 FROM node:lts-iron AS dependencies
+
+# download revanced-cli and patches
+ARG REVANCED_CLI_VER
+ARG REVANCED_CLI_FILE="revanced-cli-${REVANCED_CLI_VER}-all.jar"
+RUN wget -O /revanced-cli.jar "https://github.com/ReVanced/revanced-cli/releases/download/v${REVANCED_CLI_VER}/${REVANCED_CLI_FILE}"
+
+ARG REVANCED_PATCHES_VER
+ARG REVANCED_PATCHES_FILE="revanced-patches-${REVANCED_PATCHES_VER}.jar"
+ARG REVANCED_PATCHES_URL="https://github.com/ReVanced/revanced-patches/releases/download/v${REVANCED_PATCHES_VER}/${REVANCED_PATCHES_FILE}"
+ARG REVANCED_PATCHES_JSON_URL="https://github.com/ReVanced/revanced-patches/releases/download/v${REVANCED_PATCHES_VER}/patches.json"
+RUN wget -O /revanced-patches.jar ${REVANCED_PATCHES_URL}
+RUN wget -O /patches.json ${REVANCED_PATCHES_JSON_URL}
+
+ARG REVANCED_INTEGRATIONS_VER
+ARG REVANCED_INTEGRATIONS_FILE="revanced-integrations-${REVANCED_INTEGRATIONS_VER}.apk"
+ARG REVANCED_INTEGRATIONS_URL="https://github.com/ReVanced/revanced-integrations/releases/download/v${REVANCED_INTEGRATIONS_VER}/${REVANCED_INTEGRATIONS_FILE}"
+RUN wget -O /revanced-integrations.apk ${REVANCED_INTEGRATIONS_URL}
 
 # Set the working directory
 WORKDIR /usr/src/app
 
 # Copy only package.json and package-lock.json (if available)
 COPY package*.json ./
-
-# download revanced-cli and patches
-ARG REVANCED_CLI_VER="4.6.0"
-ARG REVANCED_CLI_FILE="revanced-cli-${REVANCED_CLI_VER}-all.jar"
-RUN wget -O /revanced-cli.jar "https://github.com/ReVanced/revanced-cli/releases/download/v${REVANCED_CLI_VER}/${REVANCED_CLI_FILE}"
-
-ARG REVANCED_PATCHES_VER="4.8.3"
-ARG REVANCED_PATCHES_FILE="revanced-patches-${REVANCED_PATCHES_VER}.jar"
-ARG REVANCED_PATCHES_URL="https://github.com/ReVanced/revanced-patches/releases/download/v${REVANCED_PATCHES_VER}/${REVANCED_PATCHES_FILE}"
-RUN wget -O /revanced-patches.jar ${REVANCED_PATCHES_URL}
-
-ARG REVANCED_INTEGRATIONS_VER="1.9.2"
-ARG REVANCED_INTEGRATIONS_FILE="revanced-integrations-${REVANCED_INTEGRATIONS_VER}.apk"
-ARG REVANCED_INTEGRATIONS_URL="https://github.com/ReVanced/revanced-integrations/releases/download/v${REVANCED_INTEGRATIONS_VER}/${REVANCED_INTEGRATIONS_FILE}"
-RUN wget -O /revanced-integrations.apk ${REVANCED_INTEGRATIONS_URL}
 
 # Install dependencies
 RUN npm install -g pnpm
@@ -70,6 +57,9 @@ RUN $JAVA_HOME/bin/jlink \
 
 # Stage 4: Create the production image
 FROM node:lts-iron AS prod
+ARG REVANCED_CLI_VER
+ARG REVANCED_PATCHES_VER
+ARG REVANCED_INTEGRATIONS_VER
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -98,6 +88,9 @@ ENV PATH "${JAVA_HOME}/bin:${PATH}"
 COPY --from=jre-build /javaruntime $JAVA_HOME
 
 ENV NODE_ENV=prod
+ENV CLIVERSION=${REVANCED_CLI_VER}
+ENV PATCHESVERSION=${REVANCED_PATCHES_VER}
+ENV INTEGRATIONSVERSION=${REVANCED_INTEGRATIONS_VER}
 
 
 # Start the app

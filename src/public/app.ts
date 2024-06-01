@@ -1,7 +1,24 @@
 console.log("hello world")
 
-document.addEventListener("DOMContentLoaded", function (event) {
+document.addEventListener("DOMContentLoaded", async function (event) {
     console.log("DOMContentLoaded")
+
+    const releaseInfo = document.getElementById('releaseInfo');
+
+    try {
+        const response = await fetch('/latest-release');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        releaseInfo.innerHTML = `<p>Latest patches: ${data.patches}</p>
+        <p>Latest integrations: ${data.integrations}</p>`;
+    } catch (error) {
+        releaseInfo.innerHTML = `<p>Error loading latest release: ${error.message}</p>`;
+    }
+
+
+
     document.getElementById('uploadForm').addEventListener('submit', function (event) {
         event.preventDefault() // Prevent form submission
 

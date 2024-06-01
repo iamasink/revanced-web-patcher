@@ -3,11 +3,20 @@ import multer from 'multer'
 import { exec } from 'child_process'
 import path from 'path'
 import fs from 'fs'
+import https from 'https'
 
 const app = express()
 const PORT = process.env.PORT || 3000
 const UPLOAD_FOLDER = '/usr/src/app/uploads'
 const PROCESSED_FOLDER = '/usr/src/app/processed'
+console.log(process.env.NODE_ENV)
+console.log(process.env.CLIVERSION)
+console.log(process.env.PATCHESVERSION)
+console.log(process.env.INTEGRATIONSVERSION)
+let lastreleasecheck: Date
+const REVANCED_CLI_VER: string = process.env.CLIVERSION
+let latestpatches: string = process.env.PATCHESVERSION
+let latestintegrations: string = process.env.INTEGRATIONSVERSION
 
 // Set up multer for file uploads
 const upload = multer({ dest: UPLOAD_FOLDER })
@@ -116,14 +125,71 @@ app.get('/download/:filename', (req, res) => {
     })
 })
 
+async function downloadFile(fileName: string, url: string) {
+    console.log("downloading file", fileName, url)
+    const file = fs.createWriteStream(fileName);
+    const request = https.get(url, function (response) {
+        response.pipe(file);
+
+        // after download completed close filestream
+        file.on("finish", () => {
+            file.close();
+            console.log("Download Completed");
+        });
+    });
+}
+
+// Endpoint to get the latest release
+app.get('/latest-release', async (req: Request, res: Response) => {
+    // return res.json({ "patches": latestpatches, "integrations": latestintegrations });
+
+
+    const now = new Date();
+    console.log("checking releases. current time:", now)
+
+    if (!lastreleasecheck || (now.getTime() - lastreleasecheck.getTime()) > 5 * 60 * 1000) {
+        console.log("fetching new releases")
+        lastreleasecheck = now;
+        try {
+            console.log("fetch!")
+            const newpatches = await getLatestPatches()
+            const newintegrations = await getLatestIntegrations()
+            console.log("done fetch")
+            if ("v" + latestpatches != newpatches.tag_name) {
+                console.log("downloading patches")
+                downloadFile("patches.json", newpatches.assets.find((element) => element.name === "patches.json").browser_download_url)
+                const regex = /revanced-patches-.*.jar/g;
+                downloadFile("revanced-patches.jar", newpatches.assets.find((x) => x.name.match(regex)).browser_download_url)
+            }
+            if ("v" + latestintegrations != newintegrations.tag_name) {
+                const regex = /revanced-integrations-.*.apk/g;
+                downloadFile("revanced-integrations.apk", newpatches.assets.find((x) => x.name.match(regex)).browser_download_url)
+            }
+
+
+
+            latestpatches = newpatches.tag_name
+            latestintegrations = newintegrations.tag_name
+
+
+        } catch (error) {
+            res.status(500).send('Error fetching latest release');
+            return;
+        }
+    }
+
+    res.json({ "patches": latestpatches, "integrations": latestintegrations });
+});
+
 // Serve index.html for root URL
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'))
 })
 
 // Start server
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
     console.log(`Server listening on port ${PORT}`)
+    // console.log(await getLatestPatches())
 })
 
 // Handle shutdown signals
@@ -142,3 +208,35 @@ process.on('SIGINT', () => {
         process.exit(0)
     })
 })
+
+
+
+
+async function getLatestPatches() {
+    return (await getLatestRelease("https://api.github.com/repos/ReVanced/revanced-patches/releases/latest"))
+}
+async function getLatestIntegrations() {
+    return (await getLatestRelease("https://api.github.com/repos/ReVanced/revanced-integrations/releases/latest"))
+}
+
+
+async function getLatestRelease(url: string): Promise<any> {
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'Accept': 'application/vnd.github.v3+json',
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error fetching release: ${response.statusText}`);
+        }
+
+        const release = await response.json();
+        return release;
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}
+

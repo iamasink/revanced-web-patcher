@@ -14,11 +14,21 @@
 
 <body>
     <h1>Upload a File</h1>
+    <h1>Latest GitHub Release</h1>
+    <div id="releaseInfo">
+        <p>Latest patches: vX.X.X</p>
+        <p>Latest integrations: vX.X.X</p>
+    </div>
     <!-- <div id="formdiv"> -->
     <form id="uploadForm" enctype="multipart/form-data">
         <input type="file" name="file" id="fileInput">
         <button type="submit" id="fileInputSubmit">Upload</button>
     </form>
+    <label for="options">Choose an option:</label>
+    <select id="options" name="options" disabled>
+        <option value="option1">loading...</option>
+    </select>
+
     <!-- </div> -->
 
     <div id="logdiv">

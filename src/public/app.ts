@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async function (event) {
         releaseInfo.innerHTML = `<p>Error loading latest release: ${error.message}</p>`;
     }
 
-    const apkDropdown = document.getElementById('apkOptions')
+    const apkDropdown = document.getElementById('apkoptions')
     const apps = await (await fetch('/apps')).json()
     console.log("apps")
     console.log(apps)
@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", async function (event) {
         console.log(event)
         const selectedValue = (event.target as HTMLSelectElement).value;
         console.log("Selected value:", selectedValue)
-        const optionsDiv = document.getElementById('optionsDiv');
+        const optionsDiv = document.getElementById('optionsdiv');
 
         const textNode = document.createTextNode(selectedValue);
         // Append the text node to the output div

@@ -1,0 +1,15 @@
+FROM eclipse-temurin:11 AS jre-build
+# Create a custom Java runtime
+RUN $JAVA_HOME/bin/jlink \
+    --add-modules java.base \
+    --strip-debug \
+    --no-man-pages \
+    --no-header-files \
+    --compress=2 \
+    --output /javaruntime
+
+ARG REVANCED_CLI_VER="4.6.0"
+ARG REVANCED_CLI_FILE="revanced-cli-${REVANCED_CLI_VER}-all.jar"
+RUN wget -O /revanced-cli.jar "https://github.com/ReVanced/revanced-cli/releases/download/v${REVANCED_CLI_VER}/${REVANCED_CLI_FILE}"
+
+CMD ["tail", "-f", "/dev/null"]

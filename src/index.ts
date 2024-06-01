@@ -37,6 +37,12 @@ app.use((req, res, next) => {
 
 // Handle file upload
 app.post('/upload', upload.single('file'), (req, res) => {
+    console.log(req.file)
+    console.log(req.body)
+
+    const options = JSON.parse(req.body.patches)
+    console.log(options)
+
     if (!req.file) {
         console.error('No file uploaded')
         return res.status(400).send('No file uploaded')

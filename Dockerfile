@@ -1,5 +1,5 @@
 ARG REVANCED_CLI_VER="4.6.0"
-ARG REVANCED_PATCHES_VER="4.8.2"
+ARG REVANCED_PATCHES_VER="4.8.3"
 ARG REVANCED_INTEGRATIONS_VER="1.9.2"
 
 
@@ -66,8 +66,11 @@ WORKDIR /usr/src/app
 
 # Copy the node_modules directory from the dependencies stage
 COPY --from=dependencies /usr/src/app/node_modules ./node_modules
+COPY package*.json ./
+COPY tsconfig.json ./
 # Copy revanced-cli, revances-patches, etc from dependencies
 COPY --from=dependencies /revanced-* /
+COPY --from=dependencies /patches.json /
 
 # Copy the compiled application code
 COPY --from=builder /usr/src/app/dist ./dist

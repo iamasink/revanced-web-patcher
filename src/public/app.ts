@@ -2,7 +2,6 @@ console.log("hello world")
 
 document.addEventListener("DOMContentLoaded", async function (event) {
     console.log("DOMContentLoaded")
-
     const releaseInfo = document.getElementById('releaseInfo');
 
     try {
@@ -15,6 +14,21 @@ document.addEventListener("DOMContentLoaded", async function (event) {
         <p>Latest integrations: ${data.integrations}</p>`;
     } catch (error) {
         releaseInfo.innerHTML = `<p>Error loading latest release: ${error.message}</p>`;
+    }
+    try {
+
+    } catch (error) {
+        releaseInfo.innerHTML = `<p>Error loading latest release: ${error.message}</p>`;
+    }
+
+    var sel = document.getElementById('options');
+    const apps = await fetch('/apps');
+
+    for (let i = 0, len = apps.json.length; i < len; i++) {
+        const opt = document.createElement('option');
+        opt.value = apps[i].name;
+        opt.innerHTML = apps[i].versions;
+        sel.appendChild(opt);
     }
 
 

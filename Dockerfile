@@ -83,7 +83,8 @@ COPY --from=dependencies /revanced-* /
 COPY --from=builder /usr/src/app/dist ./dist
 COPY src/public/ ./dist/public
 # remove .ts files so the browser doesnt whine
-RUN find /usr/src/app -type f -name '*.ts' -delete
+# RUN find /usr/src/app -type f -name '*.ts' -delete
+# RUN find /usr/src/app -type f -name '*.map' -delete
 
 # # Copy JRE from the jre stage
 # COPY --from=jre /opt/java/openjdk /opt/java/openjdk

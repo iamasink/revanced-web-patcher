@@ -7,16 +7,19 @@
     <title>File Upload</title>
     <link rel="stylesheet" href="styles.css" type="text/css" />
     <script src="app.js"></script>
+    <script>
+        console.log("Hello world")
+    </script>
 </head>
 
 <body>
     <h1>Upload a File</h1>
-    <div id="formdiv">
-        <form id="uploadForm" enctype="multipart/form-data">
-            <input type="file" name="file" id="fileInput">
-            <button id="fileInputSubmit" type="submit">Upload</button>
-        </form>
-    </div>
+    <!-- <div id="formdiv"> -->
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file" id="fileInput">
+        <button type="submit" id="fileInputSubmit">Upload</button>
+    </form>
+    <!-- </div> -->
 
     <div id="logdiv">
         <div id="log"></div>

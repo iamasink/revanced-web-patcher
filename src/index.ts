@@ -13,7 +13,7 @@ console.log(process.env.NODE_ENV)
 console.log(process.env.CLIVERSION)
 console.log(process.env.PATCHESVERSION)
 console.log(process.env.INTEGRATIONSVERSION)
-let lastreleasecheck: Date
+let lastreleasecheck = new Date();
 const REVANCED_CLI_VER: string = process.env.CLIVERSION || "v???"
 let latestpatches: string = process.env.PATCHESVERSION || "v???"
 let latestintegrations: string = process.env.INTEGRATIONSVERSION || "v???"
@@ -351,7 +351,7 @@ export interface CompatiblePackage {
 export interface PatchesOption {
     key: string;
     default: null | string;
-    values: { [key: string]: string } | null;
+    values?: { [key: string]: string } | null;
     title: string;
     description: string;
     required: boolean;

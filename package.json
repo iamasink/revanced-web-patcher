@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "dev": "nodemon -e ts,html,css --exec npm run nodemon",
-    "nodemon": "tsc -p . && ts-node src/index.ts"
+    "dev": "nodemon --watch src -e ts,html,css --exec npm run nodemon",
+    "nodemon": "tsc && cp src/public dist -R && ts-node src/index.ts"
   },
   "author": "",
   "license": "ISC",

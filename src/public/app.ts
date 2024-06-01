@@ -21,16 +21,30 @@ document.addEventListener("DOMContentLoaded", async function (event) {
         releaseInfo.innerHTML = `<p>Error loading latest release: ${error.message}</p>`;
     }
 
-    var sel = document.getElementById('options');
-    const apps = await fetch('/apps');
+    const apkDropdown = document.getElementById('apkOptions')
+    const apps = await (await fetch('/apps')).json()
+    console.log("apps")
+    console.log(apps)
 
-    for (let i = 0, len = apps.json.length; i < len; i++) {
+    for (let i = 0, len = apps.length; i < len; i++) {
         const opt = document.createElement('option');
         opt.value = apps[i].name;
-        opt.innerHTML = apps[i].versions;
-        sel.appendChild(opt);
+        opt.innerHTML = apps[i].name;
+        apkDropdown.appendChild(opt);
     }
+    apkDropdown.removeAttribute("disabled")
+    apkDropdown.onchange = (event: Event) => {
+        console.log(event)
+        const selectedValue = (event.target as HTMLSelectElement).value;
+        console.log("Selected value:", selectedValue)
+        const optionsDiv = document.getElementById('optionsDiv');
 
+        const textNode = document.createTextNode(selectedValue);
+        // Append the text node to the output div
+        if (optionsDiv) {
+            optionsDiv.appendChild(textNode);
+        }
+    };
 
 
     document.getElementById('uploadForm').addEventListener('submit', function (event) {

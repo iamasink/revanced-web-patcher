@@ -35,25 +35,7 @@ app.use((req, res, next) => {
     next()
 })
 
-// Handle file upload
-app.post('/upload', upload.single('file'), (req, res) => {
-    console.log(req.file)
-    console.log(req.body)
 
-    const options = JSON.parse(req.body.patches)
-    console.log(options)
-
-    if (!req.file) {
-        console.error('No file uploaded')
-        return res.status(400).send('No file uploaded')
-    }
-
-    console.log('File uploaded:', req.file.originalname)
-    console.log('File path:', req.file.path)
-
-    // Respond with uploaded file details
-    res.json({ filename: req.file.filename, originalname: req.file.originalname })
-})
 
 app.get("/patches/:app?", async (req, res) => {
     const appParam = req.params.app
@@ -132,6 +114,31 @@ app.get("/apps/:appname?", async (req, res) => {
     }
 });
 
+// Handle file upload
+app.post('/upload', upload.single('file'), (req, res) => {
+    console.log(req.file)
+    console.log(req.body)
+
+    const options = JSON.parse(req.body.patches)
+    console.log(options)
+    fs.writeFile(`options-${req.file.filename}.json`, JSON.stringify(options), (error) => {
+        if (error) throw new Error("bad options")
+    })
+
+    if (!req.file) {
+        console.error('No file uploaded')
+        return res.status(400).send('No file uploaded')
+    }
+
+    console.log('File uploaded:', req.file.originalname)
+    console.log('File path:', req.file.path)
+    console.log("filename", req.file.filename)
+    console.log("originalname", req.file.originalname)
+
+    // Respond with uploaded file details
+    res.json({ filename: req.file.filename, originalname: req.file.originalname })
+})
+
 
 // Process the uploaded file
 app.get('/process/:filename', (req, res) => {
@@ -148,7 +155,7 @@ app.get('/process/:filename', (req, res) => {
     res.setHeader('Connection', 'keep-alive')
 
     // Sanitize the filename before using it
-    const sanitizedFilename = filename.replace(/[^\w.() -]/g, '_')
+    const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.\-_]/g, '')
     const processedFile = path.join(PROCESSED_FOLDER, sanitizedFilename)
     const command = `java -jar /revanced-cli.jar patch ${inputFile} -o ${processedFile} --merge /revanced-integrations.apk --patch-bundle /revanced-patches.jar`
 
@@ -164,12 +171,12 @@ app.get('/process/:filename', (req, res) => {
     childProcess.stderr?.on('data', (data) => {
         console.error(`Command stderr: ${data}`)
         res.write(`data: ${data}\n\n`)
+        res.write(`data: close\n\n`)
+        res.end()
     })
 
     // Handle command completion and errors https://stackoverflow.com/questions/6534572/how-to-close-a-server-sent-events-connection-on-the-server
     childProcess.on('exit', (code, signal) => {
-
-
         if (code !== 0) {
             res.write(`data: Command exited with code ${code} and signal ${signal}\n\n`)
             res.end() // End the SSE stream

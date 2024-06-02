@@ -206,13 +206,14 @@ app.get('/process/:filename', (req, res) => {
 app.get('/download/:filename', (req, res) => {
     const filename = req.params.filename
     const filePath = path.join(PROCESSED_FOLDER, filename)
+    const suggestedFilename = req.query.name as string || "app.apk"
 
     if (!fs.existsSync(filePath)) {
         return res.status(404).send('File not found')
     }
 
     console.log('Downloading file:', filePath)
-    res.download(filePath, (err) => {
+    res.download(filePath, suggestedFilename, (err) => {
         if (err) {
             console.error(`Error downloading file: ${err.message}`)
             // res.send('Error downloading file')

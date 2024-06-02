@@ -35,10 +35,10 @@ document.addEventListener("DOMContentLoaded", async function (event) {
     apkDropdown.removeAttribute("disabled")
     apkDropdown.onchange = async (event: Event) => {
         console.log(event)
-        const selectedValue = (event.target as HTMLSelectElement).value
-        console.log("Selected value:", selectedValue)
+        const appName = (event.target as HTMLSelectElement).value
+        console.log("Selected value:", appName)
         const patchesDiv = document.getElementById('patchoptions')
-        const patches = await (await fetch(`/patches/${selectedValue}`)).json()
+        const patches = await (await fetch(`/patches/${appName}`)).json()
         // const patches = fetchedpatches.map(e => `${e.name} - ${e.description}`)
         patchesDiv.innerHTML = ""
         for (let i = 0, len = patches.length; i < len; i++) {
@@ -146,6 +146,7 @@ document.addEventListener("DOMContentLoaded", async function (event) {
                 console.log(response)
                 const responsedata = await response.json()
                 console.log(responsedata)
+                const appName = responsedata.originalname
                 // handle log 
                 const outputElement = document.getElementById('log')
                 const log = document.getElementById('log') as HTMLDivElement
@@ -156,7 +157,7 @@ document.addEventListener("DOMContentLoaded", async function (event) {
                     console.log(event.data)
                     if (event.data === "close") {
                         log.innerText += "Closing SSE <3" + '\n'
-                        const downloadLink = `<a href="/download/${responsedata.filename}">Download Processed File</a>`
+                        const downloadLink = `<a href="/download/${responsedata.filename}${appName ? "?name=revanced-" + appName : ""}}">Download Processed File</a>`
                         document.getElementById('downloadLink').innerHTML = downloadLink
                         eventSource.close()
                     } else {

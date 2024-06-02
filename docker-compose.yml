@@ -1,7 +1,7 @@
 ---
 services:
   revanced-web-patcher:
-    build: .
+    image: ghcr.io/iamasink/revanced-web-patcher:latest
     container_name: revanced-web-patcher
     ports:
       - 3000:3000

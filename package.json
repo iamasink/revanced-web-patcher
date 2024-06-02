@@ -1,7 +1,12 @@
 {
   "name": "revanced-web-patcher",
   "version": "1.0.0",
-  "description": "",
+  "description": "Revanced Patcher",
+  "homepage": "https://github.com/iamasink/revanced-web-patcher#readme",
+  "bugs": "https://github.com/iamasink/revanced-web-patcher/issues",
+  "author": "iamasink",
+  "license": "MIT",
+  "repository": "github:iamasink/revanced-web-patcher",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,8 +14,6 @@
     "dev": "nodemon --watch src -e ts,html,css --exec npm run nodemon",
     "nodemon": "tsc --incremental && cp src/public dist -R && ts-node src/index.ts"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.2",
     "compression": "^1.7.4",

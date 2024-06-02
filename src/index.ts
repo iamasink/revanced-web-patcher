@@ -13,7 +13,7 @@ console.log(process.env.NODE_ENV)
 console.log(process.env.CLIVERSION)
 console.log(process.env.PATCHESVERSION)
 console.log(process.env.INTEGRATIONSVERSION)
-let lastreleasecheck = new Date();
+let lastreleasecheck = new Date()
 const REVANCED_CLI_VER: string = process.env.CLIVERSION || "v???"
 let latestpatches: string = process.env.PATCHESVERSION || "v???"
 let latestintegrations: string = process.env.INTEGRATIONSVERSION || "v???"
@@ -27,7 +27,7 @@ const upload = multer({ dest: UPLOAD_FOLDER })
 // Serve static files
 console.log(path.join(__dirname, "./public"))
 // serve the compiled `dist` files to the client
-app.use("/", express.static(path.join(__dirname, "../dist/public")));
+app.use("/", express.static(path.join(__dirname, "../dist/public")))
 
 // Log requests
 app.use((req, res, next) => {
@@ -45,27 +45,27 @@ app.get("/patches/:app?", async (req, res) => {
         res.json({ "error": "downloading patches, please try again later" })
     } else {
         try {
-            var fs = require('fs');
+            var fs = require('fs')
 
             fs.readFile('/patches.json', 'utf8', function (err, data) {
-                if (err) throw err; // we'll not consider error handling for now
-                const patches = JSON.parse(data);
+                if (err) throw err // we'll not consider error handling for now
+                const patches = JSON.parse(data)
                 if (appParam) {
                     // Filter patches based on the app parameter
                     const filteredPatches = patches.filter(patch => {
                         if (patch.compatiblePackages) return patch.compatiblePackages.some(pkg => pkg.name === appParam)
                         else return true
                     })
-                    res.json(filteredPatches);
+                    res.json(filteredPatches)
                 } else {
                     // If no app parameter, return all patches
-                    res.json(patches);
+                    res.json(patches)
                 }
-            });
+            })
 
         } catch (err) {
-            console.error('Error reading or parsing patches.json:', err);
-            res.status(500).send('Error reading patches');
+            console.error('Error reading or parsing patches.json:', err)
+            res.status(500).send('Error reading patches')
         }
 
     }
@@ -74,45 +74,45 @@ app.get("/apps/:appname?", async (req, res) => {
     const appname = req.params.appname
 
     if (downloadingrevanced) {
-        res.json({ "error": "downloading patches, please try again later" });
+        res.json({ "error": "downloading patches, please try again later" })
     } else {
         try {
-            const fs = require('fs').promises;
+            const fs = require('fs').promises
 
-            const data = await fs.readFile('/patches.json', 'utf8');
-            const patches = JSON.parse(data);
+            const data = await fs.readFile('/patches.json', 'utf8')
+            const patches = JSON.parse(data)
 
-            const appsMap = new Map();
+            const appsMap = new Map()
             for (const patch of patches) {
-                const pkgs = patch.compatiblePackages || [];
+                const pkgs = patch.compatiblePackages || []
                 for (const pkg of pkgs) {
                     if (!appsMap.has(pkg.name)) {
-                        appsMap.set(pkg.name, { name: pkg.name, versions: pkg.versions });
+                        appsMap.set(pkg.name, { name: pkg.name, versions: pkg.versions })
                     }
                 }
             }
 
-            const uniqueApps = Array.from(appsMap.values());
+            const uniqueApps = Array.from(appsMap.values())
 
             if (appname) {
                 // If appname is provided, find version information for that app
                 const versionInfo = uniqueApps.filter(e => e.name === appname).map(e => e.versions)
 
                 if (versionInfo.length === 0) {
-                    res.status(404).json({ "error": "App not found" });
+                    res.status(404).json({ "error": "App not found" })
                 } else {
-                    res.json(versionInfo[0]);
+                    res.json(versionInfo[0])
                 }
             } else {
                 // If no appname provided, return information for all apps
-                res.json(uniqueApps);
+                res.json(uniqueApps)
             }
         } catch (err) {
-            console.error('Error reading or parsing patches.json:', err);
-            res.status(500).send('Error reading patches');
+            console.error('Error reading or parsing patches.json:', err)
+            res.status(500).send('Error reading patches')
         }
     }
-});
+})
 
 // Handle file upload
 app.post('/upload', upload.single('file'), (req, res) => {
@@ -224,16 +224,16 @@ app.get('/download/:filename', (req, res) => {
 
 async function downloadFile(fileName: string, url: string) {
     console.log("downloading file", fileName, url)
-    const file = fs.createWriteStream(fileName);
+    const file = fs.createWriteStream(fileName)
     const request = https.get(url, function (response) {
-        response.pipe(file);
+        response.pipe(file)
 
         // after download completed close filestream
         file.on("finish", () => {
-            file.close();
-            console.log("Download Completed");
-        });
-    });
+            file.close()
+            console.log("Download Completed")
+        })
+    })
 }
 
 // Endpoint to get the latest release
@@ -241,7 +241,7 @@ app.get('/latest-release', async (req: Request, res: Response) => {
     // return res.json({ "patches": latestpatches, "integrations": latestintegrations });
 
 
-    const now = new Date();
+    const now = new Date()
     console.log("checking releases. current time:", now)
 
     if (!lastreleasecheck || (now.getTime() - lastreleasecheck.getTime()) > 5 * 60 * 1000) {
@@ -254,17 +254,17 @@ app.get('/latest-release', async (req: Request, res: Response) => {
                 const [newpatches, newintegrations] = await Promise.all([
                     getLatestPatches(),
                     getLatestIntegrations()
-                ]);
+                ])
                 console.log("done fetch")
                 const downloadPromises: Promise<void>[] = []
                 if ("v" + latestpatches != newpatches.tag_name) {
                     console.log("downloading patches")
                     downloadPromises.push(downloadFile("patches.json", newpatches.assets.find((element) => element.name === "patches.json").browser_download_url))
-                    const regex = /revanced-patches-.*.jar/g;
+                    const regex = /revanced-patches-.*.jar/g
                     downloadPromises.push(downloadFile("revanced-patches.jar", newpatches.assets.find((x) => x.name.match(regex)).browser_download_url))
                 }
                 if ("v" + latestintegrations != newintegrations.tag_name) {
-                    const regex = /revanced-integrations-.*.apk/g;
+                    const regex = /revanced-integrations-.*.apk/g
                     downloadPromises.push(downloadFile("revanced-integrations.apk", newpatches.assets.find((x) => x.name.match(regex)).browser_download_url))
                 }
 
@@ -275,15 +275,15 @@ app.get('/latest-release', async (req: Request, res: Response) => {
 
 
             } catch (error) {
-                res.status(500).send('Error fetching latest release');
-                return;
+                res.status(500).send('Error fetching latest release')
+                return
             }
             downloadingrevanced = false
         } else console.log("already downloading...")
     }
 
-    res.json({ "patches": latestpatches, "integrations": latestintegrations });
-});
+    res.json({ "patches": latestpatches, "integrations": latestintegrations })
+})
 
 // Serve index.html for root URL
 app.get('/', (req, res) => {
@@ -330,17 +330,17 @@ async function getLatestRelease(url: string): Promise<any> {
             headers: {
                 'Accept': 'application/vnd.github.v3+json',
             }
-        });
+        })
 
         if (!response.ok) {
-            throw new Error(`Error fetching release: ${response.statusText}`);
+            throw new Error(`Error fetching release: ${response.statusText}`)
         }
 
-        const release = await response.json();
-        return release;
+        const release = await response.json()
+        return release
     } catch (error) {
-        console.error('Error:', error);
-        throw error;
+        console.error('Error:', error)
+        throw error
     }
 }
 
@@ -348,24 +348,24 @@ async function getLatestRelease(url: string): Promise<any> {
 type Patches = Patch[]
 
 export interface Patch {
-    name: string;
-    description: null | string;
-    compatiblePackages: CompatiblePackage[] | null;
-    use: boolean;
-    requiresIntegrations: boolean;
-    options: PatchesOption[];
+    name: string
+    description: null | string
+    compatiblePackages: CompatiblePackage[] | null
+    use: boolean
+    requiresIntegrations: boolean
+    options: PatchesOption[]
 }
 
 export interface CompatiblePackage {
-    name: string;
-    versions: string[] | null;
+    name: string
+    versions: string[] | null
 }
 
 export interface PatchesOption {
-    key: string;
-    default: null | string;
-    values?: { [key: string]: string } | null;
-    title: string;
-    description: string;
-    required: boolean;
+    key: string
+    default: null | string
+    values?: { [key: string]: string } | null
+    title: string
+    description: string
+    required: boolean
 }

@@ -2,17 +2,18 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag revanced-web-patcher:$(date +%s)
+      - uses: actions/checkout@v4
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile \
+          --tag ghcr.io/${{ github.repository }}/revanced-web-patcher:latest \
+          --tag ghcr.io/${{ github.repository }}/revanced-web-patcher:$(date +%Y%m%d%H%M%S) \
+          --tag revanced-web-patcher:$(date +%s) --push

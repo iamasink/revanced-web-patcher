@@ -148,6 +148,11 @@ document.addEventListener("DOMContentLoaded", async function (event) {
                 console.log(responsedata)
                 const appName = responsedata.originalname
                 // handle log 
+
+                const url = new URL(window.location.href)
+                url.searchParams.set("file", responsedata.filename)
+                history.pushState({}, "", url)
+
                 const outputElement = document.getElementById('log')
                 const log = document.getElementById('log') as HTMLDivElement
 

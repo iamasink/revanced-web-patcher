@@ -24,13 +24,29 @@ let downloadingrevanced = false
 // Set up multer for file uploads
 const upload = multer({ dest: UPLOAD_FOLDER })
 
-// Serve static files
+// Serve index.html for root URL
+app.get('/', (req, res) => {
+    let filename = req.query.file
+    console.log(filename)
+    if (filename) {
+        console.log("ya")
+        res.redirect("/download/" + filename)
+    } else {
+        console.log("nop")
+    }
+
+    res.sendFile(path.join(__dirname, '..', "dist", "public", 'index.html'))
+})
+
 console.log(path.join(__dirname, "./public"))
+// Serve static files
 // serve the compiled `dist` files to the client
 app.use("/", express.static(path.join(__dirname, "../dist/public")))
 
+
 // Log requests
 app.use((req, res, next) => {
+
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`)
     next()
 })
@@ -172,17 +188,32 @@ app.get('/process/:filename', (req, res) => {
         console.error(`Command stderr: ${data}`)
         res.write(`data: ${data}\n\n`)
         res.write(`data: close\n\n`)
+
+
         res.end()
     })
 
-    // Handle command completion and errors https://stackoverflow.com/questions/6534572/how-to-close-a-server-sent-events-connection-on-the-server
+    //  https://stackoverflow.com/questions/6534572/how-to-close-a-server-sent-events-connection-on-the-server
+    // Once Finished Processing or errored
     childProcess.on('exit', (code, signal) => {
         if (code !== 0) {
             res.write(`data: Command exited with code ${code} and signal ${signal}\n\n`)
             res.end() // End the SSE stream
         } else {
             res.write('data: Command execution finished\n\n')
-            res.write("data: close\n\n")
+            res.write("data: close\n\n") // ask the client to close the stream
+
+            // Delete the processed file after 30 minutes
+            setTimeout(() => {
+                fs.unlink(processedFile, (err) => {
+                    if (err) {
+                        console.error(`Error deleting processed file: ${err}`)
+                    } else {
+                        console.log(`Processed file deleted: ${processedFile}`)
+                    }
+                })
+            }, 30 * 60 * 1000)
+
             let manualShutdown
             res.on("close", () => {
                 console.log('disconnected.')
@@ -209,7 +240,7 @@ app.get('/download/:filename', (req, res) => {
     const suggestedFilename = req.query.name as string || "app.apk"
 
     if (!fs.existsSync(filePath)) {
-        return res.status(404).send('File not found')
+        return res.status(404).send('File not found. If you refreshed the page while patching, refresh in a few minutes. Files expire after 30 minutes.')
     }
 
     console.log('Downloading file:', filePath)
@@ -284,11 +315,6 @@ app.get('/latest-release', async (req: Request, res: Response) => {
     }
 
     res.json({ "patches": latestpatches, "integrations": latestintegrations })
-})
-
-// Serve index.html for root URL
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'))
 })
 
 // Start server

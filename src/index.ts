@@ -215,7 +215,7 @@ app.get('/download/:filename', (req, res) => {
     res.download(filePath, (err) => {
         if (err) {
             console.error(`Error downloading file: ${err.message}`)
-            res.status(500).send('Error downloading file')
+            // res.send('Error downloading file')
         } else {
             console.log('File downloaded:', filePath)
         }

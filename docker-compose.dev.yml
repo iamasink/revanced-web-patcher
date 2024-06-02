@@ -1,8 +1,8 @@
 ---
 services:
-  myapp:
+  revanced-web-patcher:
     build: .
-    container_name: myapp
+    container_name: revanced-web-patcher
     ports:
       - 666:3000
     volumes:
@@ -10,5 +10,3 @@ services:
     environment:
       - NODE_ENV=development
     command: npm run dev
-    # Optionally, you can specify a command to override the default
-    # command: ["echo", "Hello from Docker Compose"]

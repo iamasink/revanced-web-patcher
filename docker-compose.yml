@@ -5,9 +5,5 @@ services:
     container_name: myapp
     ports:
       - 3000:3000
-    develop:
-      watch:
-        - path: ./src
-          action: rebuild
     # Optionally, you can specify a command to override the default
     # command: ["echo", "Hello from Docker Compose"]

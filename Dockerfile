@@ -2,9 +2,6 @@ ARG REVANCED_CLI_VER="4.6.0"
 ARG REVANCED_PATCHES_VER="4.8.3"
 ARG REVANCED_INTEGRATIONS_VER="1.9.2"
 
-
-
-# Stage 1: Install dependencies
 FROM node:lts-iron AS dependencies
 
 # download revanced-cli and patches
@@ -27,14 +24,13 @@ RUN wget -O /revanced-integrations.apk ${REVANCED_INTEGRATIONS_URL}
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Copy only package.json and package-lock.json (if available)
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies
+# Install dependencies with pnpm
 RUN npm install -g pnpm
 RUN pnpm install
 
-# Stage 2: Compile TypeScript code
 FROM dependencies AS builder
 
 # Copy the source code
@@ -44,7 +40,7 @@ COPY tsconfig.json ./
 # Compile TypeScript code
 RUN npm run build
 
-# Stage 3: Install OpenJDK JRE 11 https://hub.docker.com/_/eclipse-temurin/
+# Install OpenJDK JRE 11 https://hub.docker.com/_/eclipse-temurin/
 FROM eclipse-temurin:11 AS jre-build
 # Create a custom Java runtime
 RUN $JAVA_HOME/bin/jlink \
@@ -55,7 +51,7 @@ RUN $JAVA_HOME/bin/jlink \
     --compress=2 \
     --output /javaruntime
 
-# Stage 4: Create the production image
+# Create the production image
 FROM node:lts-iron AS prod
 ARG REVANCED_CLI_VER
 ARG REVANCED_PATCHES_VER

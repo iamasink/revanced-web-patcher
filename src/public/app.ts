@@ -34,6 +34,8 @@ document.addEventListener("DOMContentLoaded", async function (event) {
     }
     apkDropdown.removeAttribute("disabled")
     apkDropdown.onchange = async (event: Event) => {
+        // When an APK has been selected from the dropdown
+
         console.log(event)
         const appName = (event.target as HTMLSelectElement).value
         console.log("Selected value:", appName)
@@ -41,6 +43,8 @@ document.addEventListener("DOMContentLoaded", async function (event) {
         const patches = await (await fetch(`/patches/${appName}`)).json()
         // const patches = fetchedpatches.map(e => `${e.name} - ${e.description}`)
         patchesDiv.innerHTML = ""
+
+        // loop through compatible patches and display them to the user in a form
         for (let i = 0, len = patches.length; i < len; i++) {
             const p = patches[i]
 
@@ -88,6 +92,8 @@ document.addEventListener("DOMContentLoaded", async function (event) {
     }
 
     document.getElementById('uploadForm').addEventListener('submit', async function (event) {
+        // when submit button pressed 
+
         event.preventDefault() // Prevent form submission
 
 
@@ -228,6 +234,9 @@ interface Patch {
 function createOptionsUI(patch: Patch, patchoptionsdiv) {
     // const patchoptionsdiv = document.getElementById('optionsDiv');
     patchoptionsdiv.innerHTML = '' // Clear previous options
+    const apkinfo = document.createElement('label')
+    apkinfo.innerText = `Suggested Version:`
+    patchoptionsdiv.appendChild(apkinfo)
 
     // Loop through the options of the patch
     for (const option of patch.options) {

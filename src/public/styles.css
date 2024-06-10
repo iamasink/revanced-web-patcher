@@ -4,11 +4,14 @@ body {
     padding: 20px;
 }
 
+.formdiv {
+    border:#007bff
+}
+
 form {
     display: flex;
     flex-direction: column;
     max-width: 400px;
-    margin: 0 auto;
 }
 
 input[type="file"] {

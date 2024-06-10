@@ -13,7 +13,7 @@ console.log(process.env.NODE_ENV)
 console.log(process.env.CLIVERSION)
 console.log(process.env.PATCHESVERSION)
 console.log(process.env.INTEGRATIONSVERSION)
-let lastreleasecheck = new Date()
+let lastreleasecheck
 const REVANCED_CLI_VER: string = process.env.CLIVERSION || "v???"
 let latestpatches: string = process.env.PATCHESVERSION || "v???"
 let latestintegrations: string = process.env.INTEGRATIONSVERSION || "v???"
@@ -64,7 +64,8 @@ app.get("/patches/:app?", async (req, res) => {
             var fs = require('fs')
 
             fs.readFile('/patches.json', 'utf8', function (err, data) {
-                if (err) throw err // we'll not consider error handling for now
+                if (err) throw err
+
                 const patches = JSON.parse(data)
                 if (appParam) {
                     // Filter patches based on the app parameter
@@ -127,6 +128,106 @@ app.get("/apps/:appname?", async (req, res) => {
             console.error('Error reading or parsing patches.json:', err)
             res.status(500).send('Error reading patches')
         }
+    }
+})
+app.get("/suggestedversion/:appname?", async (req, res) => {
+    const appname = req.params.appname
+
+    if (downloadingrevanced) {
+        res.json({ "error": "downloading patches, please try again later" })
+    } else {
+        var fs = require('fs')
+
+        fs.readFile('/patches.json', 'utf8', function (err, data) {
+            if (err) throw err
+            const versions: { [version: string]: number } = {}
+            const patches = JSON.parse(data)
+            if (appname) {
+                // Filter patches based on the app parameter
+                const filteredPatches = patches.filter(patch => {
+                    if (patch.compatiblePackages) {
+                        return patch.compatiblePackages.some(pkg => pkg.name === appname)
+                    } else {
+                        return true
+                    }
+                })
+
+                for (let i = 0, len = filteredPatches.length; i < len; i++) {
+                    const p = filteredPatches[i]
+                    if (!p.compatiblePackages) continue
+                    const compatiblePackage = p.compatiblePackages.find(e => e.name === appname)
+                    if (!compatiblePackage) continue
+                    const vers = compatiblePackage.versions
+                    if (!vers) continue
+                    for (let j = 0, len = vers.length; j < len; j++) {
+                        const v = vers[j]
+                        if (!versions[v]) {
+                            versions[v] = 1
+                        } else {
+                            versions[v] += 1
+                        }
+                    }
+                }
+                console.log(versions)
+
+                let maxCount = 0
+                for (const count of Object.values(versions)) {
+                    if (count > maxCount) {
+                        maxCount = count
+                    }
+                }
+
+                const bestversions = []
+                for (const [version, count] of Object.entries(versions)) {
+                    if (count === maxCount) {
+                        bestversions.push(version)
+                    }
+                }
+
+                console.log(bestversions)
+
+                console.log(bestversions.sort().pop())
+
+
+                // // Return the most compatible versions
+                // res.json({ mostCompatibleVersions });
+            }
+        })
+
+        // fs.readFile('/patches.json', 'utf8', function (err, data) {
+        //     if (err) throw err
+        //     const versions = {}
+        //     const patches = JSON.parse(data)
+        //     if (appname) {
+        //         // Filter patches based on the app parameter
+        //         const filteredPatches: Patches = patches.filter(patch => {
+        //             if (patch.compatiblePackages) return patch.compatiblePackages.some(pkg => pkg.name === appname)
+        //             else return true
+        //         })
+        //         // console.log(filteredPatches)
+        //         for (let i = 0, len = filteredPatches.length; i < len; i++) {
+        //             // for every patch that has this package as compatible, add the compatible versions to the array
+        //             const p = filteredPatches[i]
+        //             // console.log(p)
+        //             if (!p.compatiblePackages) continue
+        //             console.log(p.compatiblePackages.find(e => e.name === appname))
+        //             const vers = p.compatiblePackages.find(e => e.name === appname).versions
+        //             if (!vers) continue
+        //             for (let i = 0, len = vers.length; i < len; i++) {
+        //                 const v = vers[i]
+        //                 if (!versions[v]) {
+        //                     versions[v] = 0
+        //                 } else {
+        //                     versions[v] += 1
+        //                 }
+        //             }
+        //         }
+        //         console.log(versions)
+        //     } else {
+        //         // If no app parameter, return all patches
+        //         res.json(patches)
+        //     }
+        // })
     }
 })
 
@@ -263,8 +364,13 @@ async function downloadFile(fileName: string, url: string) {
         // after download completed close filestream
         file.on("finish", () => {
             file.close()
-            console.log("Download Completed")
+            console.log("Download Completed", fileName)
         })
+        file.on("error", (e) => {
+            console.log("error", e)
+        })
+    }).on("error", (e) => {
+        console.log(e)
     })
 }
 
@@ -291,16 +397,15 @@ app.get('/latest-release', async (req: Request, res: Response) => {
                 const downloadPromises: Promise<void>[] = []
                 if ("v" + latestpatches != newpatches.tag_name) {
                     console.log("downloading patches")
-                    downloadPromises.push(downloadFile("patches.json", newpatches.assets.find((element) => element.name === "patches.json").browser_download_url))
+                    await downloadFile(`patches-${newpatches.tag_name}.json`, newpatches.assets.find((element) => element.name === "patches.json").browser_download_url)
                     const regex = /revanced-patches-.*.jar/g
-                    downloadPromises.push(downloadFile("revanced-patches.jar", newpatches.assets.find((x) => x.name.match(regex)).browser_download_url))
+                    await downloadFile(`revanced-patches-${newpatches.tag_name}.jar`, newpatches.assets.find((x) => x.name.match(regex)).browser_download_url)
                 }
                 if ("v" + latestintegrations != newintegrations.tag_name) {
                     const regex = /revanced-integrations-.*.apk/g
-                    downloadPromises.push(downloadFile("revanced-integrations.apk", newpatches.assets.find((x) => x.name.match(regex)).browser_download_url))
+                    await downloadFile(`revanced-integrations-${newintegrations.tag_name}.apk`, newpatches.assets.find((x) => x.name.match(regex)).browser_download_url)
                 }
 
-                await Promise.all(downloadPromises)
 
                 latestpatches = newpatches.tag_name
                 latestintegrations = newintegrations.tag_name
@@ -370,6 +475,7 @@ async function getLatestRelease(url: string): Promise<any> {
         throw error
     }
 }
+
 
 
 type Patches = Patch[]

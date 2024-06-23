@@ -355,22 +355,28 @@ app.get('/download/:filename', (req, res) => {
     })
 })
 
-async function downloadFile(fileName: string, url: string) {
-    console.log("downloading file", fileName, url)
-    const file = fs.createWriteStream(fileName)
-    const request = https.get(url, function (response) {
-        response.pipe(file)
-
-        // after download completed close filestream
-        file.on("finish", () => {
-            file.close()
-            console.log("Download Completed", fileName)
+async function downloadFile(fileName: string, url: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        console.log("downloading file", fileName, url)
+        const file = fs.createWriteStream(fileName)
+        https.get(url, (response) => {
+            if (response.statusCode !== 200) {
+                reject(new Error(`Failed to get '${url}' (${response.statusCode})`))
+                return
+            }
+            response.pipe(file)
+            file.on('finish', () => {
+                file.close(() => {
+                    console.log("Download Completed", fileName)
+                    resolve()
+                })
+            })
+            file.on('error', (err) => {
+                fs.unlink(fileName, () => reject(err))
+            })
+        }).on('error', (err) => {
+            fs.unlink(fileName, () => reject(err))
         })
-        file.on("error", (e) => {
-            console.log("error", e)
-        })
-    }).on("error", (e) => {
-        console.log(e)
     })
 }
 
@@ -397,15 +403,17 @@ app.get('/latest-release', async (req: Request, res: Response) => {
                 const downloadPromises: Promise<void>[] = []
                 if ("v" + latestpatches != newpatches.tag_name) {
                     console.log("downloading patches")
-                    await downloadFile(`patches-${newpatches.tag_name}.json`, newpatches.assets.find((element) => element.name === "patches.json").browser_download_url)
+                    downloadPromises.push(downloadFile(`patches-${newpatches.tag_name}.json`, newpatches.assets.find((element) => element.name === "patches.json").browser_download_url))
                     const regex = /revanced-patches-.*.jar/g
-                    await downloadFile(`revanced-patches-${newpatches.tag_name}.jar`, newpatches.assets.find((x) => x.name.match(regex)).browser_download_url)
+                    downloadPromises.push(downloadFile(`revanced-patches-${newpatches.tag_name}.jar`, newpatches.assets.find((x) => x.name.match(regex)).browser_download_url))
                 }
                 if ("v" + latestintegrations != newintegrations.tag_name) {
                     const regex = /revanced-integrations-.*.apk/g
-                    await downloadFile(`revanced-integrations-${newintegrations.tag_name}.apk`, newpatches.assets.find((x) => x.name.match(regex)).browser_download_url)
+                    downloadPromises.push(downloadFile(`revanced-integrations-${newintegrations.tag_name}.apk`, newintegrations.assets.find((x) => x.name.match(regex)).browser_download_url))
                 }
 
+                await Promise.all(downloadPromises)
+                console.log("all done")
 
                 latestpatches = newpatches.tag_name
                 latestintegrations = newintegrations.tag_name

@@ -5,21 +5,21 @@ ARG REVANCED_INTEGRATIONS_VER="1.9.2"
 FROM node:lts-iron AS dependencies
 
 # download revanced-cli and patches
-ARG REVANCED_CLI_VER
-ARG REVANCED_CLI_FILE="revanced-cli-${REVANCED_CLI_VER}-all.jar"
-RUN wget -O /revanced-cli.jar "https://github.com/ReVanced/revanced-cli/releases/download/v${REVANCED_CLI_VER}/${REVANCED_CLI_FILE}"
+# ARG REVANCED_CLI_VER
+# ARG REVANCED_CLI_FILE="revanced-cli-${REVANCED_CLI_VER}-all.jar"
+# RUN wget -O /revanced-cli.jar "https://github.com/ReVanced/revanced-cli/releases/download/v${REVANCED_CLI_VER}/${REVANCED_CLI_FILE}"
 
-ARG REVANCED_PATCHES_VER
-ARG REVANCED_PATCHES_FILE="revanced-patches-${REVANCED_PATCHES_VER}.jar"
-ARG REVANCED_PATCHES_URL="https://github.com/ReVanced/revanced-patches/releases/download/v${REVANCED_PATCHES_VER}/${REVANCED_PATCHES_FILE}"
-ARG REVANCED_PATCHES_JSON_URL="https://github.com/ReVanced/revanced-patches/releases/download/v${REVANCED_PATCHES_VER}/patches.json"
-RUN wget -O /revanced-patches.jar ${REVANCED_PATCHES_URL}
-RUN wget -O /patches.json ${REVANCED_PATCHES_JSON_URL}
+# ARG REVANCED_PATCHES_VER
+# ARG REVANCED_PATCHES_FILE="revanced-patches-${REVANCED_PATCHES_VER}.jar"
+# ARG REVANCED_PATCHES_URL="https://github.com/ReVanced/revanced-patches/releases/download/v${REVANCED_PATCHES_VER}/${REVANCED_PATCHES_FILE}"
+# ARG REVANCED_PATCHES_JSON_URL="https://github.com/ReVanced/revanced-patches/releases/download/v${REVANCED_PATCHES_VER}/patches.json"
+# RUN wget -O /revanced-patches.jar ${REVANCED_PATCHES_URL}
+# RUN wget -O /patches.json ${REVANCED_PATCHES_JSON_URL}
 
-ARG REVANCED_INTEGRATIONS_VER
-ARG REVANCED_INTEGRATIONS_FILE="revanced-integrations-${REVANCED_INTEGRATIONS_VER}.apk"
-ARG REVANCED_INTEGRATIONS_URL="https://github.com/ReVanced/revanced-integrations/releases/download/v${REVANCED_INTEGRATIONS_VER}/${REVANCED_INTEGRATIONS_FILE}"
-RUN wget -O /revanced-integrations.apk ${REVANCED_INTEGRATIONS_URL}
+# ARG REVANCED_INTEGRATIONS_VER
+# ARG REVANCED_INTEGRATIONS_FILE="revanced-integrations-${REVANCED_INTEGRATIONS_VER}.apk"
+# ARG REVANCED_INTEGRATIONS_URL="https://github.com/ReVanced/revanced-integrations/releases/download/v${REVANCED_INTEGRATIONS_VER}/${REVANCED_INTEGRATIONS_FILE}"
+# RUN wget -O /revanced-integrations.apk ${REVANCED_INTEGRATIONS_URL}
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -65,8 +65,8 @@ COPY --from=dependencies /usr/src/app/node_modules ./node_modules
 COPY package*.json ./
 COPY tsconfig.json ./
 # Copy revanced-cli, revances-patches, etc from dependencies
-COPY --from=dependencies /revanced-* /
-COPY --from=dependencies /patches.json /
+# COPY --from=dependencies /revanced-* /
+# COPY --from=dependencies /patches.json /
 
 # Copy the compiled application code
 COPY --from=builder /usr/src/app/dist ./dist

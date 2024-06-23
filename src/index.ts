@@ -15,8 +15,10 @@ console.log(process.env.PATCHESVERSION)
 console.log(process.env.INTEGRATIONSVERSION)
 let lastreleasecheck
 const REVANCED_CLI_VER: string = process.env.CLIVERSION || "v???"
-let latestpatches: string = process.env.PATCHESVERSION || "v???"
-let latestintegrations: string = process.env.INTEGRATIONSVERSION || "v???"
+// let latestpatches: string = process.env.PATCHESVERSION || "v???"
+let latestpatches: string = "v???"
+// let latestintegrations: string = process.env.INTEGRATIONSVERSION || "v???"
+let latestintegrations: string = "v???"
 let installedpatches = latestpatches
 let installedintegrations = latestintegrations
 let downloadingrevanced = false
@@ -63,7 +65,7 @@ app.get("/patches/:app?", async (req, res) => {
         try {
             var fs = require('fs')
 
-            fs.readFile('/patches.json', 'utf8', function (err, data) {
+            fs.readFile(`/patches-${latestpatches}.json`, 'utf8', function (err, data) {
                 if (err) throw err
 
                 const patches = JSON.parse(data)
@@ -96,7 +98,7 @@ app.get("/apps/:appname?", async (req, res) => {
         try {
             const fs = require('fs').promises
 
-            const data = await fs.readFile('/patches.json', 'utf8')
+            const data = await fs.readFile(`/patches-${latestpatches}.json`, 'utf8')
             const patches = JSON.parse(data)
 
             const appsMap = new Map()
@@ -138,7 +140,7 @@ app.get("/suggestedversion/:appname?", async (req, res) => {
     } else {
         var fs = require('fs')
 
-        fs.readFile('/patches.json', 'utf8', function (err, data) {
+        fs.readFile(`/patches-${latestpatches}.json`, 'utf8', function (err, data) {
             if (err) throw err
             const versions: { [version: string]: number } = {}
             const patches = JSON.parse(data)
@@ -186,11 +188,11 @@ app.get("/suggestedversion/:appname?", async (req, res) => {
 
                 console.log(bestversions)
 
-                console.log(bestversions.sort().pop())
+                console.log(bestversions.sort())
 
 
-                // // Return the most compatible versions
-                // res.json({ mostCompatibleVersions });
+                // Return the most compatible versions
+                res.json({ suggestedVersions: bestversions })
             }
         })
 
@@ -355,30 +357,51 @@ app.get('/download/:filename', (req, res) => {
     })
 })
 
+
 async function downloadFile(fileName: string, url: string): Promise<void> {
     return new Promise((resolve, reject) => {
-        console.log("downloading file", fileName, url)
-        const file = fs.createWriteStream(fileName)
-        https.get(url, (response) => {
-            if (response.statusCode !== 200) {
-                reject(new Error(`Failed to get '${url}' (${response.statusCode})`))
-                return
-            }
-            response.pipe(file)
-            file.on('finish', () => {
-                file.close(() => {
-                    console.log("Download Completed", fileName)
-                    resolve()
+        console.log("Starting download of file", fileName, "from URL", url)
+        const file = fs.createWriteStream("/" + fileName)
+
+        const handleResponse = (response: any) => {
+            if (response.statusCode === 200) {
+                response.on('end', () => {
+                    console.log("\nResponse ended.")
                 })
-            })
-            file.on('error', (err) => {
-                fs.unlink(fileName, () => reject(err))
-            })
-        }).on('error', (err) => {
+
+                response.pipe(file)
+                file.on('finish', () => {
+                    file.close(() => {
+                        console.log("Download Completed", fileName)
+                        resolve()
+                    })
+                })
+                file.on('error', (err: any) => {
+                    fs.unlink(fileName, () => reject(err))
+                })
+            } else if (response.statusCode === 302 || response.statusCode === 301) {
+                // Handle redirects
+                const redirectUrl = response.headers.location
+                if (redirectUrl) {
+                    console.log(`Redirecting to ${redirectUrl}`)
+                    https.get(new URL(redirectUrl), handleResponse).on('error', (err) => {
+                        fs.unlink(fileName, () => reject(err))
+                    })
+                } else {
+                    reject(new Error('Redirection without a location'))
+                }
+            } else {
+                reject(new Error(`Failed to get '${url}' (${response.statusCode})`))
+            }
+        }
+
+        https.get(url, handleResponse).on('error', (err) => {
             fs.unlink(fileName, () => reject(err))
         })
     })
 }
+
+
 
 // Endpoint to get the latest release
 app.get('/latest-release', async (req: Request, res: Response) => {

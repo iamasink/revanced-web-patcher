@@ -22,7 +22,8 @@ document.addEventListener("DOMContentLoaded", async function (event) {
     }
 
     const apkDropdown = document.getElementById('apkoptions')
-    const apps = await (await fetch('/apps')).json()
+    const fileInput = document.getElementById('fileInput') as HTMLInputElement // Get file input element
+    const apps: { name: string, versions: any }[] = await (await fetch('/apps')).json()
     console.log("apps")
     console.log(apps)
 
@@ -43,6 +44,15 @@ document.addEventListener("DOMContentLoaded", async function (event) {
         const patches = await (await fetch(`/patches/${appName}`)).json()
         // const patches = fetchedpatches.map(e => `${e.name} - ${e.description}`)
         patchesDiv.innerHTML = ""
+
+        // fetch suggested version and add search button
+        const suggestedVersionText = (document.getElementById('suggestedVersionText') as HTMLParagraphElement)
+        const suggestedVersionLink = (document.getElementById('suggestedVersionLink') as HTMLAnchorElement)
+        const suggestedVer = (await (await fetch(`/suggestedversion/${appName}`)).json()).suggestedVersions.pop()
+        console.log(suggestedVer)
+        suggestedVersionText.textContent = `Suggested Version: v${suggestedVer}`
+        suggestedVersionLink.href = `https://duckduckgo.com/?q=${appName} apk version ${suggestedVer}`
+
 
         // loop through compatible patches and display them to the user in a form
         for (let i = 0, len = patches.length; i < len; i++) {
@@ -90,6 +100,33 @@ document.addEventListener("DOMContentLoaded", async function (event) {
             }
         }
     }
+
+    fileInput.onchange = async (event) => {
+        const target = event.target as HTMLInputElement
+        let filename = target.value
+        filename = filename.slice(0, filename.indexOf("_"))
+
+        console.log(event)
+        let appname: string
+
+        let result = findBestMatch(filename, apps.map(e => e.name)).ratings.sort((a, b) => b.rating - a.rating)
+        console.log(result)
+
+        apkDropdown.innerHTML = ""
+        let option = document.createElement('option')
+        option.value = "Choose an APK to patch"
+        option.innerHTML = "Choose an APK to patch"
+        apkDropdown.appendChild(option)
+
+        for (let i = 0, len = result.length; i < len; i++) {
+            const name = result[i].target
+            const opt = document.createElement('option')
+            opt.value = name
+            opt.innerHTML = name
+            apkDropdown.appendChild(opt)
+        }
+    }
+
 
     document.getElementById('uploadForm').addEventListener('submit', async function (event) {
         // when submit button pressed 
@@ -269,4 +306,59 @@ function createOptionsUI(patch: Patch, patchoptionsdiv) {
 
         patchoptionsdiv.appendChild(document.createElement('br')) // Add line break
     }
+}
+
+// https://github.com/aceakash/string-similarity/blob/master/src/index.js
+function compareTwoStrings(first: string, second: string) {
+    first = first.replace(/\s+/g, '')
+    second = second.replace(/\s+/g, '')
+
+    if (first === second) return 1 // identical or empty
+    if (first.length < 2 || second.length < 2) return 0 // if either is a 0-letter or 1-letter string
+
+    let firstBigrams = new Map()
+    for (let i = 0; i < first.length - 1; i++) {
+        const bigram = first.substring(i, i + 2)
+        const count = firstBigrams.has(bigram)
+            ? firstBigrams.get(bigram) + 1
+            : 1
+
+        firstBigrams.set(bigram, count)
+    };
+
+    let intersectionSize = 0
+    for (let i = 0; i < second.length - 1; i++) {
+        const bigram = second.substring(i, i + 2)
+        const count = firstBigrams.has(bigram)
+            ? firstBigrams.get(bigram)
+            : 0
+
+        if (count > 0) {
+            firstBigrams.set(bigram, count - 1)
+            intersectionSize++
+        }
+    }
+
+    return (2.0 * intersectionSize) / (first.length + second.length - 2)
+}
+
+function findBestMatch(mainString: string, targetStrings: string[]) {
+    // if (!areArgsValid(mainString, targetStrings)) throw new Error('Bad arguments: First argument should be a string, second should be an array of strings')
+
+    const ratings: { target: string, rating: number }[] = []
+    let bestMatchIndex = 0
+
+    for (let i = 0; i < targetStrings.length; i++) {
+        const currentTargetString = targetStrings[i]
+        const currentRating = compareTwoStrings(mainString, currentTargetString)
+        ratings.push({ target: currentTargetString, rating: currentRating })
+        if (currentRating > ratings[bestMatchIndex].rating) {
+            bestMatchIndex = i
+        }
+    }
+
+
+    const bestMatch = ratings[bestMatchIndex]
+
+    return { ratings: ratings, bestMatch: bestMatch, bestMatchIndex: bestMatchIndex }
 }
